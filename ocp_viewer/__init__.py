@@ -30,16 +30,164 @@ import sys
 
 from flask import Flask, cli
 from flask_sock import Sock
+from ocp_viewer_core.comms import Session
+from ocp_viewer_core.config import (
+    AnalysisTool,
+    Camera,
+    Collapse,
+    Config,
+    Render,
+    StudioBackground,
+    StudioEnvironment,
+    StudioTextureMapping,
+    StudioToneMapping,
+    UiTab,
+)
 from ocp_viewer_core.logo import logo
+from ocp_viewer_core.show import Viewer as CoreViewer
 from ocp_viewer_core.state import add_port, del_port
+from ocp_viewer_core.websocket import WebSocketComms
 
 from ._version import __version__
+from .keys import EXCLUDE_KEYS, WORKSPACE_CONFIG_KEYS
 from .network import is_port_in_use
 from .sockets import handle
 from .viewer import Viewer
 from .views import bp
 
-__all__ = ["Viewer", "__version__", "create_app", "serve"]
+# ------------------------------------------------------------------------
+# The client half: `from ocp_viewer import show`.
+#
+# This package is both the viewer and the way to draw into it, which is what
+# every host of the core is. The alternative was importing `show` from
+# ocp_vscode - installing the VS Code package to use the standalone, and
+# depending on a sibling host, which is exactly what the split undoes.
+#
+# Six lines, because everything they name is shared: the transport is the
+# websocket client, and the show family is the core's Viewer bound to it.
+# ------------------------------------------------------------------------
+
+client = WebSocketComms()
+_session = Session(client)
+config = Config(_session, WORKSPACE_CONFIG_KEYS, EXCLUDE_KEYS)
+_viewer = CoreViewer[None](config)
+
+show = _viewer.show
+show_object = _viewer.show_object
+show_objects = _viewer.show_objects
+show_all = _viewer.show_all
+show_clear = _viewer.show_clear
+push_object = _viewer.push_object
+remove_object = _viewer.remove_object
+reset_show = _viewer.reset_show
+save_screenshot = _viewer.save_screenshot
+get_colormap = _viewer.get_colormap
+set_colormap = _viewer.set_colormap
+unset_colormap = _viewer.unset_colormap
+get_last_paths = _viewer.get_last_paths
+
+set_defaults = config.set_defaults
+set_viewer_config = config.set_viewer_config
+
+
+def set_port(port, host="127.0.0.1"):
+    """Skip discovery and pin to a viewer."""
+    client.set_port(port, host)
+
+
+def get_port():
+    """The port in use, discovering one on first call."""
+    return client.port
+
+
+def status(port=None, debug=False):
+    """Get viewer status"""
+    _session.begin({"port": port})
+    try:
+        return config.status(debug=debug)
+    finally:
+        _session.clear()
+
+
+def workspace_config(port=None):
+    """Get viewer workspace config"""
+    _session.begin({"port": port})
+    try:
+        return config.workspace_config()
+    finally:
+        _session.clear()
+
+
+def combined_config(port=None):
+    """Get combined config from workspace and status"""
+    _session.begin({"port": port})
+    try:
+        return config.combined_config()
+    finally:
+        _session.clear()
+
+
+def get_defaults(port=None):
+    """Get all defaults"""
+    _session.begin({"port": port})
+    try:
+        return config.get_defaults()
+    finally:
+        _session.clear()
+
+
+def get_default(key, port=None):
+    """Get default value for key"""
+    _session.begin({"port": port})
+    try:
+        return config.get_default(key)
+    finally:
+        _session.clear()
+
+
+def reset_defaults(port=None):
+    """Reset defaults not given in workspace config"""
+    _session.begin({"port": port})
+    try:
+        return config.reset_defaults()
+    finally:
+        _session.clear()
+
+
+__all__ = [
+    "AnalysisTool",
+    "Camera",
+    "Collapse",
+    "Render",
+    "StudioBackground",
+    "StudioEnvironment",
+    "StudioTextureMapping",
+    "StudioToneMapping",
+    "UiTab",
+    "Viewer",
+    "__version__",
+    "combined_config",
+    "create_app",
+    "get_default",
+    "get_defaults",
+    "get_port",
+    "push_object",
+    "remove_object",
+    "reset_defaults",
+    "reset_show",
+    "save_screenshot",
+    "serve",
+    "set_defaults",
+    "set_port",
+    "set_viewer_config",
+    "show",
+    "show_all",
+    "show_clear",
+    "show_object",
+    "show_objects",
+    "status",
+    "workspace_config",
+]
 
 
 def _no_banner(debug: bool, app_import_path: str | None) -> None:
