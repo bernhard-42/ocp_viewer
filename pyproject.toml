@@ -43,7 +43,13 @@ where = ["."]
 include = ["ocp_viewer*"]
 
 [tool.setuptools.package-data]
-ocp_viewer = ["templates/*.html", "static/js/*.js", "static/css/*.css", "static/icon/*"]
+ocp_viewer = [
+    "server/templates/*.html",
+    "server/static/js/*.js",
+    "server/static/js/ocp-viewer-core/*.js",
+    "server/static/css/*.css",
+    "server/static/icon/*",
+]
 
 # ruff and ty are the whole toolchain, as in ocp-viewer-core: `ruff check`
 # lints, `ty check` types, and nothing reformats.

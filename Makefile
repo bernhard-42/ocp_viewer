@@ -34,10 +34,10 @@ check:
 # version, so a rebuilt tarball whose version has not moved installs stale.
 assets:
 	yarn install --check-files
-	@mkdir -p ocp_viewer/static/js/ocp-viewer-core
-	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.esm.js ocp_viewer/static/js/
-	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.css ocp_viewer/static/css/
-	@cp node_modules/ocp-viewer-core/src/*.js ocp_viewer/static/js/ocp-viewer-core/
+	@mkdir -p ocp_viewer/server/static/js/ocp-viewer-core
+	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.esm.js ocp_viewer/server/static/js/
+	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.css ocp_viewer/server/static/css/
+	@cp node_modules/ocp-viewer-core/src/*.js ocp_viewer/server/static/js/ocp-viewer-core/
 	@echo "=> Assets copied into static/"
 
 reload-assets:

@@ -65,6 +65,9 @@ def create_app(params):
         cli.show_server_banner = _no_banner  # ty: ignore[invalid-assignment]
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
+    # `__name__` is ocp_viewer.server, and templates/ and static/ sit
+    # beside it for that reason: they are the server's, the client half
+    # never opens them, and Flask finds them without being told where.
     app = Flask(__name__)
     app.extensions["ocp_viewer"] = viewer
     app.register_blueprint(bp)
