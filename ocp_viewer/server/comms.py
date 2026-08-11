@@ -1,8 +1,13 @@
 """The server's transport: the browser on the other end of its websocket.
 
-Not to be confused with the package's `comms.py`, which is the client - that
-one dials out to a viewer, this one answers the page it is serving. Both are
-Comms, and which of the two a host needs is what tells them apart.
+Two files called comms.py in one package, because this package is two halves.
+The one above dials out to a viewer and is told which by `set_port`; this one
+answers the browser already connected to it and has nothing to choose. Both
+are `Comms`, which is the point - the core asks for a transport and does not
+care which direction it faces.
+
+ocp_vscode has one of these and so has one comms.py; it has no server, because
+its server is the extension.
 
 The only class ocp_viewer implements from the core, and it is short because
 this host is a server. A message does not have to be dialled anywhere - the

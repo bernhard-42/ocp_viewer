@@ -5,9 +5,12 @@ talk to a viewer over the same protocol, and this package needs no more of a
 difference than which one it found. Named and shaped like ocp_vscode's comms.py
 on purpose: the two hosts are maintained together.
 
-The server's own transport - the browser at the other end of its websocket - is
-`server/browser.py`, and is a different thing despite the similar name: this
-one dials out to a viewer, that one answers the page it is serving.
+The other one is `server/comms.py`, which faces the other way: this client is
+told which viewer to talk to and opens a connection to it, and that one answers
+the browser that connected to the server. `set_port` and `get_port` are here
+rather than there because what they point is this one - the server's port is
+where it listens, and is a startup setting rather than something a script
+chooses.
 """
 
 #
