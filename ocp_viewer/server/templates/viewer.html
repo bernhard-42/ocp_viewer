@@ -35,371 +35,54 @@ limitations under the License.
         <script type="module" srv="static/js/comms.js"></script>
         <script type="module">
             import { Viewer, Display, Timer } from "./static/js/three-cad-viewer.esm.js";
-            import {
-                animate,
-                applyConfig,
-                buildDisplayOptions,
-                createNotifier,
-                createRenderer,
-                currentStates,
-                logo,
-                preset,
-                restoreStates
-            } from "./static/js/ocp-viewer-core/index.js";
+            import { createPage } from "./static/js/ocp-viewer-core/index.js";
             import { Comms } from "./static/js/comms.js";
 
-            var viewer = null;
-            var display = null;
-            var _shapes = null;
-            var _meshData = null;
-            var _config = null;
-            var _camera_distance = null;
-            var viewerOptions = {};
-            var last_bb_radius = null;
-
-            // The viewer's own state, as the renderer reports it. What used to
-            // be a variable per value here - status.zoom, status.position, _clipping,
-            // _zebra - is one object the notifier keeps, under the names the
-            // renderer notifies with: camelCase for the camera, which is sent
-            // straight to checkChanges, and snake_case for everything that goes
-            // through its notification map. render() writes into it too, after
-            // reading the camera back off the viewer.
-            //
-            // It is also what goes on the wire. The extension answers a status
-            // request with the last message the webview sent, replacing rather
-            // than merging, so a delta would lose every earlier value - and
-            // combined_config merges the viewer's state into the next show. The
-            // notifier's delta plus this snapshot is what preserves both.
-            var notifier = null;
-            var renderer = null;
-            var status = {};
-
-            const minWidth = 450;
+            // The page is ocp-viewer-core's, the same one ocp_vscode's webview
+            // builds. What is left here is how this host starts: the settings
+            // are rendered into the template by Flask, and the channel to
+            // Python is a websocket back to the server that served this page.
             const comms = new Comms("{{ ws_host }}", {{ ws_port }}, {{ max_retries }});
-            const vscode = {
-                postMessage: (msg) => {
-                    comms.sendStatus(msg);
-                }
-            };
-            // The splash is the core's here too; the standalone shows it on load
-            // rather than being told to by an extension.
-            window.showViewer = () => {
-                const splash = logo();
-                showViewer(splash.data, splash.config);
-            };
 
-            // Only what this host differs on. Every number the renderer
-            // itself defines - ambient light, metalness, the studio family -
-            // comes from the core, so two clients cannot drift apart on values
-            // neither of them chose. What is left is fed by the template, which
-            // is to say by the user's VS Code settings, plus this surface's own
-            // answer about which tools it has.
-            const displayOverrides = {
+            function send(command, message) {
+                comms.sendStatus({ command: command, text: message });
+            }
+
+            const settings = {
+                theme: "{{ theme }}",
                 treeWidth: JSON.parse("{{ treeWidth }}"), // make linter happy
                 glass: JSON.parse("{{ glass|tojson }}"), // make linter happy
                 tools: JSON.parse("{{ tools|tojson }}"), // make linter happy
-                theme: "{{ theme }}",
-                zscaleTool: false
-            };
-
-            const viewerOverrides = {
-                tools: JSON.parse("{{ tools|tojson }}"), // make linter happy
-                glass: JSON.parse("{{ glass|tojson }}"), // make linter happy
                 up: "{{ up }}",
                 control: "{{ control }}"
             };
 
-            function debugLog(tag, obj) {
-                console.log(tag, obj);
-                var msg = tag + (obj ? " " + JSON.stringify(obj) : "");
-                send("log", msg);
-            }
-
-            function send(command, message) {
-                vscode.postMessage({
-                    command: command,
-                    text: message
-                });
-            }
-
-            function nc(change) {
-                return notifier == null ? null : notifier.notify(change);
-            }
-
-            function makeRenderer() {
-                renderer = createRenderer({
-                    viewer: viewer,
-                    status: status,
-                    overrides: { viewer: viewerOverrides, theme: displayOverrides.theme },
-                    // A tree width is a resize, and only this host knows the
-                    // other two dimensions.
-                    resize: () => {
-                        const displayOptions = getDisplayOptions(_config.theme);
-                        viewer.resizeCadView(
-                            displayOptions.cadWidth,
-                            displayOptions.treeWidth,
-                            displayOptions.height,
-                            displayOptions.glass
-                        );
+            const page = createPage({
+                Viewer,
+                Display,
+                Timer,
+                send,
+                theme: settings.theme,
+                overrides: {
+                    display: {
+                        treeWidth: settings.treeWidth,
+                        glass: settings.glass,
+                        tools: settings.tools,
+                        theme: settings.theme,
+                        zscaleTool: false
                     },
-                    sendStatus: (snapshot) => send("status", snapshot),
-                    debug: _config != null && _config.debug ? debugLog : null
-                });
-            }
-
-            function makeNotifier() {
-                notifier = createNotifier({
-                    viewer: viewer,
-                    // The delta is what changed; the snapshot is what the
-                    // extension will answer the next status request with.
-                    // Event keys - a selection, a pick, the active tool - ride
-                    // on the delta only, so a selection made minutes ago is not
-                    // replayed into an unrelated update.
-                    send: (delta) => send("status", { ...status, ...delta }),
-                    debug: _config != null && _config.debug ? debugLog : null
-                });
-                status = notifier.status;
-            }
-
-            function normalizeWidth(width, glass, tools) {
-                const treeWidth =
-                    glass || !tools
-                        ? 0
-                        : preset(_config, "treeWidth", displayOverrides.treeWidth);
-                return Math.max(minWidth - treeWidth, width - treeWidth - 20);
-            }
-
-            function normalizeHeight(height) {
-                return height - 65;
-            }
-
-            function getSize() {
-                return {
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                };
-            }
-
-            function getGeometry() {
-                const size = getSize();
-                const glass = preset(_config, "glass", displayOverrides.glass);
-                const tools = preset(_config, "tools", displayOverrides.tools);
-                return {
-                    cadWidth: normalizeWidth(size.width, glass, tools),
-                    height: normalizeHeight(size.height),
-                    treeWidth: preset(
-                        _config,
-                        "treeWidth",
-                        displayOverrides.treeWidth
-                    )
-                };
-            }
-
-            function getDisplayOptions(theme) {
-                const options = buildDisplayOptions(
-                    _config,
-                    displayOverrides,
-                    getGeometry()
-                );
-                // An explicit theme argument still wins: showViewer is called
-                // with config.theme, and the observer below with the host's.
-                if (theme) {
-                    options.theme = theme;
-                }
-                return options;
-            }
-
-            function showViewer(meshData, config) {
-                debugLog("showViewer called");
-                _meshData = meshData;
-                _shapes = meshData.shapes || meshData;
-                _config = config;
-                const displayOptions = getDisplayOptions(config.theme);
-                if (display == null) {
-                    const container = document.getElementById("cad_viewer");
-                    container.innerHTML = "";
-                    display = new Display(container, displayOptions);
-                }
-                if (_config == null) {
-                    debugLog("OCP CAD Viewer: config is null");
-                    _config = {};
-                }
-                if (_config.debug) {
-                    debugLog("_config", _config);
-                    debugLog("displayOptions", displayOptions);
-                }
-                // Reuse the viewer across shows: clear() tears down the scene and
-                // resets activeTab to "tree" (which triggers leaveStudioMode if the
-                // previous show was in Studio mode), but keeps the WebGL context,
-                // ViewerState (preferences), and StudioManager (incl. PMREM env
-                // cache) alive — saving a context teardown and HDR re-fetch per show.
-                if (viewer != null) {
-                    viewer.clear();
-                } else {
-                    viewer = new Viewer(display, displayOptions, nc, null);
-                    // After the viewer, because both read it. `nc` is the
-                    // trampoline that bridges the notifier to the constructor.
-                    makeNotifier();
-                    makeRenderer();
-                }
-
-                if (_shapes) renderer.render(_meshData, _config);
-
-                viewer.glassMode(displayOptions.glass);
-                viewer.showTools(displayOptions.tools);
-
-                debugLog("showViewer finished");
-
-                return viewer;
-
-                // viewer.trimUI(["axes", "axes0", "grid", "ortho", "more", "help"])
-            }
-
-            window.addEventListener(
-                "resize",
-                function (event) {
-                    if (viewer != null) {
-                        const displayOptions = getDisplayOptions(_config.theme);
-                        viewer.resizeCadView(
-                            displayOptions.cadWidth,
-                            displayOptions.treeWidth,
-                            displayOptions.height,
-                            displayOptions.glass
-                        );
-                        viewer.gridHelper.clearCache();
-                        viewer.gridHelper.update(viewer.getCameraZoom(), true);
-                        viewer.update(true, true);
+                    viewer: {
+                        tools: settings.tools,
+                        glass: settings.glass,
+                        up: settings.up,
+                        control: settings.control
                     }
-                },
-                true
-            );
-
-            debugLog("resize listener registered");
-
-            window.addEventListener("message", (event) => {
-                var data =
-                    typeof event.data === "string" || event.data instanceof String
-                        ? JSON.parse(event.data)
-                        : event.data;
-
-                if (data.type === "logo") {
-                    // The splash lives in the core, so the host asks for it by
-                    // name and sends only what it alone knows - its theme, its
-                    // tree width, its modifier keys. It used to ship its own
-                    // 200 kB copy and post the whole model across; two hosts had
-                    // the same file byte for byte.
-                    const splash = logo();
-                    data = {
-                        ...splash,
-                        config: { ...splash.config, ...(data.config || {}) }
-                    };
-                }
-
-                if (data.type === "data" && data?.data?.shapes?.parts?.length > 0) {
-                    const timer = new Timer("webView", data.config.timeit);
-
-                    const oldStates = currentStates(viewer);
-
-                    let meshData = data.data;
-                    let config = data.config;
-
-                    if (config._splash) {
-                        const displayOptions = getDisplayOptions(config.theme);
-                        config.zoom = Math.min(
-                            1.0,
-                            displayOptions.cadWidth / displayOptions.height
-                        );
-                        // debugLog("logo zoom =", config.zoom);
-                    }
-
-                    showViewer(meshData, config);
-
-                    // Explicit states win, otherwise the user's prior visibility
-                    // choices are restored for whatever survived into the new
-                    // model - in one batched setStates either way, because a
-                    // per-key loop is a repaint per key and freezes the host.
-                    restoreStates(viewer, meshData.shapes, oldStates, config.states);
-                    timer.split("states updated");
-
-                    timer.stop();
-                } else if (data.type === "screenshot") {
-                    var promise = viewer.getImage(data.filename);
-                    promise.then((result) => {
-                        send("screenshot", {
-                            filename: result.task,
-                            data: result.dataUrl
-                        });
-                    });
-                } else if (data.type === "set_relative_time") {
-                    if (viewer) {
-                        viewer.setRelativeTime(data.value);
-                    }
-                } else if (data.type === "backend_response") {
-                    viewer.handleBackendResponse(data);
-                } else if (data.type === "clear") {
-                    viewer.clear();
-                } else if (data.type === "show") {
-                    showViewer();
-                } else if (data.type === "ui") {
-                    if (_config["_splash"]) {
-                        return;
-                    }
-                    if (data.config.debug) {
-                        debugLog("data.config", data.config);
-                    }
-                    // One dispatch, shared with cad-viewer-widget, in place of
-                    // thirty-eight else-ifs that had drifted from its copy. It
-                    // also brings the eleven studio setters this host never had:
-                    // set_viewer_config accepted them and the webview dropped
-                    // them without a word.
-                    applyConfig(viewer, data.config, {
-                        // Only the host knows the other two dimensions, so a
-                        // viewport key is a resize rather than a setter.
-                        resize: (key, value) => {
-                            const displayOptions = getDisplayOptions(data.config.theme);
-                            const glass =
-                                data.config.glass !== undefined
-                                    ? data.config.glass
-                                    : displayOptions.glass;
-                            viewer.resizeCadView(
-                                key === "cadWidth" ? value : displayOptions.cadWidth,
-                                key === "treeWidth" ? value : displayOptions.treeWidth,
-                                key === "height" ? value : displayOptions.height,
-                                glass
-                            );
-                        },
-                        onUnknown: (key) => {
-                            debugLog(`ui: no setter for '${key}'`);
-                        }
-                    });
-                } else if (data.type === "animation") {
-                    // Explode goes off first: both transform the same objects,
-                    // and animating an already-displaced model is wrong.
-                    animate(viewer, data.data, data.config.speed, (action) => {
-                        console.error(`Unknown animation action: ${action}`);
-                    });
                 }
             });
-            debugLog("message listener registered");
 
-            const observer = new MutationObserver(() => {
-                // handle theme change inside webview
-                if (displayOverrides.theme === "browser") {
-                    viewer.setTheme(document.body.className === "vscode-light" ? "light" : "dark");
-                } else {
-                    viewer.setTheme(displayOverrides.theme);
-                }
-            });
-            observer.observe(document.body, {
-                attributes: true,
-                attributeFilter: ["class"]
-            });
-
-            window.addEventListener("load", function () {
-                setTimeout(() => {
-                    send("started", {});
-                }, 200);
-            });
+            // Shown on load rather than when told to: nothing is going to send
+            // this host a splash, because it is the server.
+            window.showViewer = () => page.showSplash({ theme: settings.theme });
         </script>
     </head>
 
