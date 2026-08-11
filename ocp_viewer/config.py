@@ -1,16 +1,13 @@
-"""The viewer's settings: the defaults, the config file, and the CLI on top.
+"""Configuration of the viewer.
 
-Three sources in order - these defaults, then `~/.ocpvscode_standalone` if the
-user wrote one, then whatever the command line set. The last of those is the
-awkward one: click gives a value for every option whether the user typed it or
-not, so "was this set" is answered by comparing against the default rather than
-by asking click.
+The semantics live in `ocp_viewer_core.config`. What is this host's, and stays
+here, is the two lists that tell the core what it can do, and the names bound
+off the Config built from them.
 
-The names here are the viewer's own vocabulary, which is not quite the
-renderer's: `no_glass` and `no_tools` are inverted flags because a command line
-reads better that way, `perspective` is the opposite of `ortho`, and the three
-`grid_*` flags become one list. Translating them is this module's job, so that
-nothing downstream has to know the command line existed.
+Deliberately the same file, the same lists and the same functions as
+ocp_vscode's config.py. Both serve a three-cad-viewer of the same version, so
+the keys its status reports are the same keys - and where the two packages do
+the same job they should be the same to read.
 """
 
 #
@@ -29,123 +26,193 @@ nothing downstream has to know the command line existed.
 # limitations under the License.
 #
 
-from pathlib import Path
+from ocp_viewer_core.comms import Session
+from ocp_viewer_core.config import (
+    AnalysisTool,
+    Camera,
+    Collapse,
+    Config,
+    Render,
+    StudioBackground,
+    StudioEnvironment,
+    StudioTextureMapping,
+    StudioToneMapping,
+    UiTab,
+)
 
-import yaml
+from ocp_viewer.comms import comms
 
-# The file keeps its name. A user who has one should not have to move it
-# because the package it belongs to was renamed.
-CONFIG_FILE = Path.home() / ".ocpvscode_standalone"
+__all__ = [
+    "AnalysisTool",
+    "Camera",
+    "Collapse",
+    "Render",
+    "StudioBackground",
+    "StudioEnvironment",
+    "StudioTextureMapping",
+    "StudioToneMapping",
+    "UiTab",
+    "combined_config",
+    "get_default",
+    "get_defaults",
+    "reset_defaults",
+    "set_defaults",
+    "set_viewer_config",
+    "status",
+    "workspace_config",
+]
 
-DEFAULTS = {
-    "debug": False,
-    "no_glass": False,
-    "no_tools": False,
-    "tree_width": 240,
-    "theme": "browser",
-    "control": "trackball",
-    "modifier_keys": {
-        "shift": "shiftKey",
-        "ctrl": "ctrlKey",
-        "meta": "metaKey",
-        "alt": "altKey",
-    },
-    "new_tree_behavior": True,
-    "pan_speed": 1,
-    "rotate_speed": 1,
-    "zoom_speed": 1,
-    "axes": False,
-    "axes0": True,
-    "grid_xy": False,
-    "grid_xz": False,
-    "grid_yz": False,
-    "perspective": False,
-    "transparent": False,
-    "black_edges": False,
-    "collapse": "1",
-    "reset_camera": "KEEP",
-    "up": "Z",
-    "ticks": 5,
-    "center_grid": False,
-    "grid_font_size": 12,
-    "default_opacity": 0.5,
-    "explode": False,
-    "default_edgecolor": "#707070",
-    "default_color": "#e8b024",
-    "default_thickedgecolor": "MediumOrchid",
-    "default_facecolor": "Violet",
-    "default_vertexcolor": "MediumOrchid",
-    "angular_tolerance": 0.2,
-    "deviation": 0.1,
-    "ambient_intensity": 1.0,
-    "direct_intensity": 1.1,
-    "metalness": 0.3,
-    "roughness": 0.65,
-}
+WORKSPACE_CONFIG_KEYS = (
+    "ambient_intensity",
+    "analysis_tool",
+    "angular_tolerance",
+    "axes",
+    "axes0",
+    "black_edges",
+    "center_grid",
+    "clip_intersection",
+    "clip_normal_0",
+    "clip_normal_1",
+    "clip_normal_2",
+    "clip_object_colors",
+    "clip_planes",
+    "clip_slider_0",
+    "clip_slider_1",
+    "clip_slider_2",
+    "collapse",
+    "dark",
+    "default_color",
+    "default_edgecolor",
+    "default_facecolor",
+    "default_opacity",
+    "default_thickedgecolor",
+    "default_vertexcolor",
+    "deviation",
+    "direct_intensity",
+    "explode",
+    "glass",
+    "grid",
+    "grid_font_size",
+    "metalness",
+    "modifier_keys",
+    "orbit_control",
+    "ortho",
+    "pan_speed",
+    "rotate_speed",
+    "roughness",
+    "states",
+    "studio_4k_env_maps",
+    "studio_ao_intensity",
+    "studio_background",
+    "studio_env_intensity",
+    "studio_env_rotation",
+    "studio_environment",
+    "studio_exposure",
+    "studio_shadow_intensity",
+    "studio_shadow_softness",
+    "studio_texture_mapping",
+    "studio_tone_mapping",
+    "tab",
+    "ticks",
+    "tools",
+    "transparent",
+    "tree_width",
+    "up",
+    "zebra_color_scheme",
+    "zebra_count",
+    "zebra_direction",
+    "zebra_mapping_mode",
+    "zebra_opacity",
+    "zoom_speed",
+)
 
-# Not settings: where to listen, and how the page should behave if the server
-# goes away. They are read straight off the params and never reach the viewer.
-NOT_VIEWER_SETTINGS = ("port", "host", "create_configfile", "max_reconnect_attempts")
+# What this host cannot be told, because the webview decides it: the panel's
+# geometry is the panel's. Jupyter CadQuery, where a cell asks for a widget of a
+# given size, excludes neither.
+
+EXCLUDE_KEYS = ("cad_width", "height")
+
+session = Session(comms)
+config = Config(session, WORKSPACE_CONFIG_KEYS, EXCLUDE_KEYS)
+
+set_defaults = config.set_defaults
+set_viewer_config = config.set_viewer_config
+check_deprecated = config.check_deprecated
+validate_tool_args = config.validate_tool_args
 
 
-def write_config_file():
-    """Write the defaults to the config file, for a user to edit."""
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        f.write(yaml.dump(DEFAULTS))
-    return CONFIG_FILE
+# The small entry points keep the port keyword and open the scope so the
+# transport can act on it. They wrap rather than nest: the core's calls between
+# its own methods go straight to the methods, never back through here.
 
 
-def _from_file():
-    if not CONFIG_FILE.exists():
-        return {}
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+def status(port=None, debug=False):
+    """Get viewer status"""
+    session.begin({"port": port})
+    try:
+        return config.status(debug=debug)
+    finally:
+        session.clear()
 
 
-def resolve(params):
-    """The viewer config, from the defaults, the file and the command line.
+def workspace_config(port=None):
+    """Get viewer workspace config"""
+    session.begin({"port": port})
+    try:
+        return config.workspace_config()
+    finally:
+        session.clear()
 
-    Returns the config the viewer and the page are given - in the renderer's
-    vocabulary, with the command line's inversions already undone.
-    """
-    settings = {**DEFAULTS, **_from_file()}
 
-    # A grid flag on the command line only ever turns a plane on: the three
-    # options are `--grid-xy` and friends, and there is no `--no-grid-xy`.
-    grid = [settings["grid_xy"], settings["grid_xz"], settings["grid_yz"]]
-    for key, value in params.items():
-        if key in NOT_VIEWER_SETTINGS:
-            continue
-        if value == settings.get(key):
-            continue
-        if key in ("grid_xy", "grid_xz", "grid_yz"):
-            grid[("grid_xy", "grid_xz", "grid_yz").index(key)] = True
-        else:
-            settings[key] = value
+def combined_config(port=None):
+    """Get combined config from workspace and status"""
+    session.begin({"port": port})
+    try:
+        return config.combined_config()
+    finally:
+        session.clear()
 
-    config = {
-        "grid": grid,
-        # The viewer takes the mode as a string, and the config file may have
-        # written it as an integer.
-        "collapse": str(settings["collapse"]),
-        # Inverted on the command line, because a flag that turns something off
-        # reads better than one that takes a boolean.
-        "glass": not settings["no_glass"],
-        "tools": not settings["no_tools"],
-        "ortho": not settings["perspective"],
-        # str() because the settings dict holds every type the config file
-        # may carry, and a camera mode written without quotes arrives as
-        # something without .upper().
-        "reset_camera": str(settings["reset_camera"]).upper(),
-    }
-    for key, value in settings.items():
-        if key not in ("grid_xy", "grid_xz", "grid_yz", *config, "no_glass",
-                       "no_tools", "perspective"):
-            config[key] = value
 
-    # For compatibility with 2.9.0, whose config files have no alt key.
-    keys = config.get("modifier_keys")
-    if isinstance(keys, dict) and keys.get("alt") is None:
-        keys["alt"] = "altKey"
+def get_changed_config(key=None, port=None):
+    """Get changed config from workspace and status"""
+    session.begin({"port": port})
+    try:
+        return config.get_changed_config(key=key)
+    finally:
+        session.clear()
 
-    return dict(sorted(config.items()))
+
+def get_defaults(port=None):
+    """Get all defaults"""
+    session.begin({"port": port})
+    try:
+        return config.get_defaults()
+    finally:
+        session.clear()
+
+
+def get_default(key, port=None):
+    """Get default value for key"""
+    session.begin({"port": port})
+    try:
+        return config.get_default(key)
+    finally:
+        session.clear()
+
+
+def preset(key, value, port=None):
+    """The default for key, unless a value was given"""
+    session.begin({"port": port})
+    try:
+        return config.preset(key, value)
+    finally:
+        session.clear()
+
+
+def reset_defaults(port=None):
+    """Reset defaults not given in workspace config"""
+    session.begin({"port": port})
+    try:
+        return config.reset_defaults()
+    finally:
+        session.clear()

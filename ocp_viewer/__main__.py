@@ -25,8 +25,8 @@ the callback exists.
 import click
 import yaml
 
-from . import serve
-from .config import DEFAULTS, write_config_file
+from .server import serve
+from .server.settings import DEFAULTS, write_config_file
 
 
 def represent_list(dumper, data):

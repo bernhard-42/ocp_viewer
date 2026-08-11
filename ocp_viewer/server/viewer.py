@@ -24,8 +24,8 @@ state belongs.
 
 from ocp_viewer_core.backend import ViewerBackend
 
-from .comms import BrowserComms
-from .config import resolve
+from .browser import BrowserComms
+from .settings import resolve
 
 
 class Viewer:

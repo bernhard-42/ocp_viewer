@@ -1,14 +1,13 @@
-"""This host's transport: the browser on the other end of a websocket.
+"""ocp_viewer's transport: the websocket client, pointed at this viewer.
 
-The only class ocp_viewer implements from the core, and it is short because
-this host is a server. A message does not have to be dialled anywhere - the
-browser is already connected, and its socket is held by the running app.
+The client itself is `ocp_viewer_core.websocket`, shared with ocp_vscode - both
+talk to a viewer over the same protocol, and this package needs no more of a
+difference than which one it found. Named and shaped like ocp_vscode's comms.py
+on purpose: the two hosts are maintained together.
 
-Which is the difference from ocp_vscode's, and worth stating: there, `show()`
-runs in the user's Python process and has to reach a viewer somewhere else, so
-its Comms opens a websocket per message. Here the sending happens inside the
-process the browser is talking to, so a send is a write to a socket already in
-hand.
+The server's own transport - the browser at the other end of its websocket - is
+`server/browser.py`, and is a different thing despite the similar name: this
+one dials out to a viewer, that one answers the page it is serving.
 """
 
 #
@@ -27,30 +26,20 @@ hand.
 # limitations under the License.
 #
 
-import orjson
-from ocp_viewer_core.comms import Comms
+from ocp_viewer_core.websocket import DEFAULT_HOST, WebSocketComms
+
+__all__ = ["comms", "get_port", "set_port"]
+
+# The one client this process talks to a viewer with, and what `show` is bound
+# through. A module-level instance rather than module-level state.
+comms = WebSocketComms()
 
 
-class BrowserComms(Comms[None]):
-    """Answers the browser this server is serving.
+def set_port(port, host=DEFAULT_HOST):
+    """Skip discovery and pin to a viewer."""
+    comms.set_port(port, host)
 
-    Built with the viewer so it can ask, at send time, which socket is
-    registered - a browser can refresh, and the socket it had is not the socket
-    it has. Holding the socket itself would answer with a closed one.
 
-    Only `send_response` is implemented. The measurement backend is the one
-    thing this host runs that talks *to* the browser; models, config and
-    commands arrive from a user's Python process and are relayed by the socket
-    handler, which has the message already encoded and no reason to decode it.
-    """
-
-    def __init__(self, viewer):
-        super().__init__()
-        self.viewer = viewer
-
-    def send_response(self, data, timeit=False) -> None:
-        client = self.viewer.browser
-        if client is None:
-            self.viewer.no_browser()
-            return
-        client.send(orjson.dumps(data))
+def get_port():
+    """The port in use, discovering one on first call."""
+    return comms.port
