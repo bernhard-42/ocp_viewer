@@ -1,0 +1,9 @@
+{
+  "name": "ocp-viewer-assets",
+  "private": true,
+  "description": "The JavaScript the viewer page loads. Not published: this exists so the two packages the page needs can be resolved and copied into static/ by `make dist`.",
+  "dependencies": {
+    "ocp-viewer-core": "../ocp-viewer-core/dist/ocp-viewer-core-v0.1.0.tgz",
+    "three-cad-viewer": "../three-cad-viewer/three-cad-viewer-v5.0.3.tgz"
+  }
+}

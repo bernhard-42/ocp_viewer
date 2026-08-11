@@ -1,0 +1,13 @@
+__pycache__/
+node_modules/
+yarn.lock
+*.egg-info/
+build/
+dist/
+.venv/
+*.tgz
+
+# Copied from node_modules by `make dist`, not sources of ours.
+ocp_viewer/static/js/three-cad-viewer.esm.js
+ocp_viewer/static/css/three-cad-viewer.css
+ocp_viewer/static/js/ocp-viewer-core/
