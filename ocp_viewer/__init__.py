@@ -27,6 +27,8 @@ which only this host has, is under `server/`.
 
 # ruff: noqa: F401
 
+from ocp_viewer_core.colors import BaseColorMap, ColorMap, web_to_rgb
+
 from ._version import __version__
 from .comms import *
 from .config import *
