@@ -1,10 +1,9 @@
 """The server's settings: the defaults, the config file, and the CLI on top.
 
-Named settings.py rather than config.py because config.py means something else
-in a host of the core - the config keys and the semantics over them, which is
-what ocp_vscode's config.py holds and what this package's does too. These are
-the values this *server* starts with, which ocp_vscode has no counterpart for:
-there they are VS Code settings, read by the extension.
+Named `settings.py` rather than `config.py` because `config.py` in a host of
+the core means the config keys and the semantics over them. These are the
+values the server starts with; the VS Code extension's equivalents are its
+workspace settings, read by the editor.
 
 Three sources in order - these defaults, then `~/.ocpvscode_standalone` if the
 user wrote one, then whatever the command line set. The last of those is the

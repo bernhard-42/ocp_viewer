@@ -1,9 +1,9 @@
 """The server half: a page, a websocket, and the settings that reach them.
 
-Separate from the package root because it has no counterpart in ocp_vscode,
-where the server is the TypeScript extension. Everything above this - comms,
-config, show - is named the same in both packages and does the same job, which
-is what makes a fix in one findable in the other.
+A subpackage of its own because only this host has one - the VS Code extension
+serves its viewer itself. The client half above, `comms`, `config` and `show`,
+is named as ocp_vscode names it, so that a fix in one is findable in the
+other.
 """
 
 #

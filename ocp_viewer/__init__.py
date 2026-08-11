@@ -4,10 +4,9 @@
 server. Everything the viewer decides is `ocp-viewer-core`'s, shared with
 ocp_vscode, Jupyter CadQuery and build123d Studio.
 
-comms.py, config.py and show.py are named and shaped as ocp_vscode's are: the
-two packages are maintained together, and a fix in one should be findable in
-the other. The server half, which ocp_vscode has no counterpart for, is under
-`server/`.
+`comms.py`, `config.py` and `show.py` are named and shaped as ocp_vscode's
+are, so that the two packages can be maintained together. The server half,
+which only this host has, is under `server/`.
 """
 
 #
