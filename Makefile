@@ -1,4 +1,4 @@
-.PHONY: clean bump install check dist assets wheel run
+.PHONY: clean bump install check tests dist assets wheel run
 
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard *.egg-info)
@@ -26,6 +26,11 @@ install:
 check:
 	uvx ruff@0.16.0 check ocp_viewer/
 	uvx ty@0.0.62 check ocp_viewer/
+
+# The CLI tests spawn a real viewer on a port of their own and ask it real
+# questions, so they need no viewer running and disturb none that is.
+tests:
+	OCP_VIEWER_PYTEST=1 pytest -q tests/
 
 # The page loads three files it does not own: the renderer, the shared viewer
 # logic, and the renderer's stylesheet. They come from npm packages and are
