@@ -62,4 +62,10 @@ class BrowserComms(Comms[None]):
         if client is None:
             self.viewer.no_browser()
             return
-        client.send(orjson.dumps(data))
+        # Decoded, because a browser is on the other end. Bytes go out as a
+        # binary frame and arrive as a Blob, and the page's socket handler
+        # reads what it is given as text - `event.data.substring is not a
+        # function` is what a Blob looks like from there. Every other message
+        # the browser receives is relayed as the string it arrived as, so this
+        # was the one that differed.
+        client.send(orjson.dumps(data).decode("utf-8"))
