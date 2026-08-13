@@ -54,7 +54,14 @@ limitations under the License.
                 glass: JSON.parse("{{ glass|tojson }}"), // make linter happy
                 tools: JSON.parse("{{ tools|tojson }}"), // make linter happy
                 up: "{{ up }}",
-                control: "{{ control }}"
+                control: "{{ control }}",
+                // The Display reads the keymap in its constructor, so it has to
+                // be here at splash: this host builds its Display once, when
+                // the page loads, and every later show recomputed the keymap
+                // and threw it away. `modifier_keys` in ~/.ocpvscode_standalone
+                // therefore never applied at all, compat shim for the missing
+                // alt key and all.
+                keymap: JSON.parse("{{ modifier_keys|tojson }}")
             };
 
             const page = createPage({
@@ -82,7 +89,12 @@ limitations under the License.
 
             // Shown on load rather than when told to: nothing is going to send
             // this host a splash, because it is the server.
-            window.showViewer = () => page.showSplash({ theme: settings.theme });
+            window.showViewer = () =>
+                page.showSplash({
+                    theme: settings.theme,
+                    treeWidth: settings.treeWidth,
+                    keymap: settings.keymap
+                });
         </script>
     </head>
 
