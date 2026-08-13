@@ -127,7 +127,7 @@ def track_param(ctx, param, value):
     "--up",
     type=click.STRING,
     default=None,
-    help=f"Provides up direction, 'Z', 'Y' or 'L' (legacy) (default: {DEFAULTS['up']!r})",
+    help=f"Provides up direction, 'Z' or 'Y' (default: {DEFAULTS['up']!r})",
     callback=track_param,
 )
 @click.option(
