@@ -31,11 +31,23 @@ chooses.
 
 from ocp_viewer_core.websocket import DEFAULT_HOST, WebSocketComms
 
-__all__ = ["comms", "get_port", "set_port"]
+__all__ = ["StandaloneComms", "comms", "get_port", "set_port"]
+
+
+class StandaloneComms(WebSocketComms):
+    """A viewer in a browser, reached over a websocket.
+
+    Nothing to add to the shared client: this host and ocp_vscode speak the same
+    protocol to the same kind of server, and the one difference ocp_vscode has -
+    telling the user about an input box - is not this host's. Named for symmetry
+    with the other hosts' transports, and so that anything this viewer comes to
+    need has a place to go.
+    """
+
 
 # The one client this process talks to a viewer with, and what `show` is bound
 # through. A module-level instance rather than module-level state.
-comms = WebSocketComms()
+comms = StandaloneComms()
 
 
 def set_port(port, host=DEFAULT_HOST):

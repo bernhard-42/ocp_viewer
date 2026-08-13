@@ -24,7 +24,6 @@ state belongs.
 
 from ocp_viewer_core.backend import ViewerBackend
 
-from .comms import BrowserComms
 from .settings import resolve
 
 
@@ -51,7 +50,9 @@ class Viewer:
         # config call that the logo is still on screen.
         self.splash = True
 
-        self.backend = ViewerBackend(BrowserComms(self))
+        # No transport: the backend computes and returns, and `sockets._update`
+        # - which already holds the browser's socket - is what delivers.
+        self.backend = ViewerBackend()
 
     def log(self, *message):
         if self.debug:

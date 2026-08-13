@@ -126,4 +126,15 @@ def _update(viewer, ws, payload):
         viewer.record(changes)
         if "selected" in changes:
             pyperclip.copy(",".join(changes["selected"]))
-        viewer.backend.handle_event(changes, MessageType.UPDATES)
+
+        # The backend answers by returning, and this is the half of the
+        # conversation holding the browser's socket - so delivering is here.
+        # None is the common case: any change set with no active tool, no
+        # selection, or a selection the active tool cannot use.
+        response = viewer.backend.handle_event(changes, MessageType.UPDATES)
+        if response is not None:
+            # Decoded, because a browser is on the other end: bytes go out as a
+            # binary frame and arrive as a Blob, and the page reads what it is
+            # given as text. Every other message here is relayed as the string
+            # it arrived as, so this is the only one that has to be encoded.
+            _to_browser(viewer, orjson.dumps(response).decode("utf-8"))
