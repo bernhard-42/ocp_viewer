@@ -67,7 +67,13 @@ DEFAULTS = {
     "perspective": False,
     "transparent": False,
     "black_edges": False,
-    "collapse": "1",
+    # The name, not the "1"/"E"/"C"/"R" shorthand it used to be. Both reach the
+    # same Collapse.LEAVES through the core's mapping, so nothing behaves
+    # differently and an existing config file keeps working - but two
+    # vocabularies for one setting is exactly what stops a value learnt in one
+    # viewer meaning anything in the next. This host's own --collapse help has
+    # documented the names all along.
+    "collapse": "leaves",
     "reset_camera": "KEEP",
     "up": "Z",
     "ticks": 5,
@@ -82,7 +88,10 @@ DEFAULTS = {
     "default_vertexcolor": "MediumOrchid",
     "angular_tolerance": 0.2,
     "deviation": 0.1,
-    "ambient_intensity": 1.0,
+    # 1 rather than 1.0, which is what the other three hosts declare. The same
+    # number either way; written the same way so a comparison across the four
+    # answers is a comparison of values and not of literals.
+    "ambient_intensity": 1,
     "direct_intensity": 1.1,
     "metalness": 0.3,
     "roughness": 0.65,
