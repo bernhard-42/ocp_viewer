@@ -27,7 +27,6 @@ the whole thing to learn nothing.
 #
 
 import orjson
-import pyperclip
 from ocp_viewer_core.comms import MessageType
 
 from .screenshot import save_png_data_url
@@ -124,8 +123,6 @@ def _update(viewer, ws, payload):
     else:
         changes = message["text"]
         viewer.record(changes)
-        if "selected" in changes:
-            pyperclip.copy(",".join(changes["selected"]))
 
         # The backend answers by returning, and this is the half of the
         # conversation holding the browser's socket - so delivering is here.

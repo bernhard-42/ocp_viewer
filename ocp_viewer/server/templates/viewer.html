@@ -45,6 +45,14 @@ limitations under the License.
             const comms = new Comms("{{ ws_host }}", {{ ws_port }}, {{ max_retries }});
 
             function send(command, message) {
+                // A Select-tool selection lands in the system clipboard - the
+                // browser's, so it reaches the machine the user is clicking
+                // on, not the server's. On an insecure origin (plain http on
+                // a non-localhost host) navigator.clipboard does not exist
+                // and this is a silent no-op.
+                if (command === "status" && Array.isArray(message.selected) && message.selected.length > 0) {
+                    navigator.clipboard?.writeText(message.selected.join(",")).catch(() => {});
+                }
                 comms.sendStatus({ command: command, text: message });
             }
 
