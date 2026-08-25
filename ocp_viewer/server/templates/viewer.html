@@ -61,7 +61,10 @@ limitations under the License.
                 // and threw it away. `modifier_keys` in ~/.ocpvscode_standalone
                 // therefore never applied at all, compat shim for the missing
                 // alt key and all.
-                keymap: JSON.parse("{{ modifier_keys|tojson }}")
+                // Single quotes, deliberately: the dict renders full of double
+                // quotes, which terminated a double-quoted string at its first
+                // key. `tojson` escapes single quotes, so this form is safe.
+                keymap: JSON.parse('{{ modifier_keys|tojson }}')
             };
 
             const page = createPage({
