@@ -27,7 +27,16 @@ which only this host has, is under `server/`.
 
 # ruff: noqa: F401
 
+from ocp_tessellate.cad_objects import ImageFace
 from ocp_viewer_core.colors import BaseColorMap, ColorMap, web_to_rgb
+from ocp_viewer_core.selectors import (
+    select_edge,
+    select_edges,
+    select_face,
+    select_faces,
+    select_vertex,
+    select_vertices,
+)
 
 from ._version import __version__
 from .comms import *

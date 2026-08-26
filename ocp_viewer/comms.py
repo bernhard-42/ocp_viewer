@@ -31,7 +31,7 @@ chooses.
 
 from ocp_viewer_core.websocket import DEFAULT_HOST, WebSocketComms
 
-__all__ = ["StandaloneComms", "comms", "get_port", "set_port"]
+__all__ = ["StandaloneComms", "comms", "find_and_set_port", "get_port", "set_port"]
 
 
 class StandaloneComms(WebSocketComms):
@@ -58,3 +58,8 @@ def set_port(port, host=DEFAULT_HOST):
 def get_port():
     """The port in use, discovering one on first call."""
     return comms.port
+
+
+def find_and_set_port():
+    """Re-run the discovery over the registry, prompting when several viewers live."""
+    comms.find_and_set_port()
