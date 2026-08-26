@@ -2,11 +2,34 @@
 
 The standalone OCP CAD viewer: a browser page and the server behind it.
 
+## Installation
+
+```bash
+pip install ocp_viewer
+```
+
+into the environment that also holds your CAD library (build123d or cadquery).
+
+## Run
+
 ```bash
 python -m ocp_viewer
 ```
 
-Then `show()` from any Python process — the same `show` you would use with the VS Code extension, pointed at this viewer's port.
+and open the printed URL in a browser — `http://127.0.0.1:3939` by default. Then show from any Python process in that environment:
+
+```python
+from build123d import *
+from ocp_viewer import *
+
+show(Box(1, 2, 3))
+```
+
+— the same `show` you would use with the VS Code extension, pointed at this viewer.
+
+## Documentation
+
+Everything else — settings, addressing several viewers, editors, Docker, the whole shared behavior — is in the documentation: the [OCP Viewer chapter](https://bernhard-42.github.io/ocp_viewer_docs/viewers/ocp_viewer/installation/) for this viewer's specifics, [bernhard-42.github.io/ocp_viewer_docs](https://bernhard-42.github.io/ocp_viewer_docs/) for the rest.
 
 ## What is here, and what is not
 
@@ -44,7 +67,7 @@ make check        # ruff check + ty check, and no formatter
 make run
 ```
 
-`make assets` copies JavaScript out of `node_modules`: three-cad-viewer and ocp-viewer-core are npm packages, taken as tarballs until they are published. `make reload-assets` rebuilds after either of them changes — the `yarn cache clean` in it is not optional, because yarn caches a file dependency by name and version and will otherwise reinstall a stale tarball.
+`make assets` copies JavaScript out of `node_modules`: three-cad-viewer and ocp-viewer-core are npm packages, installed from the registry. After bumping either dependency, run `make assets` again so the tracked static copies follow.
 
 ## Licence
 
