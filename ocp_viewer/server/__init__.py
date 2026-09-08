@@ -4,6 +4,10 @@ A subpackage of its own because only this host has one - the VS Code extension
 serves its viewer itself. The client half above, `comms`, `config` and `show`,
 is named as ocp_vscode names it, so that a fix in one is findable in the
 other.
+
+The server is `websockets`' threaded one, the same library the client half
+already speaks through. It answers websocket connections with `sockets.handle`
+and everything else - the page, its files - through `pages.respond`.
 """
 
 #
@@ -26,62 +30,37 @@ import atexit
 import logging
 import sys
 
-from flask import Flask, cli
-from flask_sock import Sock
 from ocp_viewer_core.logo import logo
 from ocp_viewer_core.state import add_port, del_port
+from websockets.exceptions import InvalidMessage
+from websockets.sync.server import serve as websocket_server
 
 from .network import is_port_in_use
+from .pages import respond
 from .sockets import handle
 from .viewer import Viewer
-from .views import bp
 
-__all__ = ["Viewer", "create_app", "serve"]
-
-
-def _no_banner(debug: bool, app_import_path: str | None) -> None:
-    """Flask's banner, silenced."""
+__all__ = ["Viewer", "serve"]
 
 
-def create_app(params):
-    """Build the app and the viewer it serves.
+class _NotAProbe(logging.Filter):
+    """Drop the traceback for a connection that said nothing.
 
-    The viewer lives in `app.extensions`, which is where a Flask extension's
-    state belongs and what makes two viewers in one process two viewers.
+    The core's `port_check` - every client's discovery, so every fresh `show()`
+    - connects and closes without sending a byte. `websockets` reports that as
+    a failed handshake with a full traceback, at ERROR, which would put one in
+    the viewer's terminal per probe. A silent connection is not an error here;
+    anything else that fails the handshake still prints.
     """
-    viewer = Viewer(params)
 
-    if not viewer.debug:
-        # Flask prints a development-server banner on start and offers no
-        # option to turn it off; replacing the function that prints it is the
-        # way. A named function rather than a lambda, so it has the signature
-        # the attribute is declared with.
-        # The ignore is about the assignment itself, not the signature: ty
-        # treats a module-level `def` as a binding rather than a variable, so
-        # replacing one is an error however well the replacement matches. The
-        # alternative is calling werkzeug's run_simple instead of app.run and
-        # skipping the banner that way, which is a change to the startup path
-        # and not one to make while moving code.
-        cli.show_server_banner = _no_banner  # ty: ignore[invalid-assignment]
-        logging.getLogger("werkzeug").setLevel(logging.ERROR)
-
-    # `__name__` is ocp_viewer.server, and templates/ and static/ sit
-    # beside it for that reason: they are the server's, the client half
-    # never opens them, and Flask finds them without being told where.
-    app = Flask(__name__)
-    app.extensions["ocp_viewer"] = viewer
-    app.register_blueprint(bp)
-
-    sock = Sock(app)
-    sock.route("/")(lambda ws: handle(viewer, ws))
-
-    return app
+    def filter(self, record):
+        exc = record.exc_info[1] if record.exc_info else None
+        return not (isinstance(exc, InvalidMessage) and isinstance(exc.__cause__, EOFError))
 
 
 def serve(params):
     """Run the viewer until it is stopped."""
-    app = create_app(params)
-    viewer = app.extensions["ocp_viewer"]
+    viewer = Viewer(params)
 
     if is_port_in_use(viewer.port, viewer.host):
         print(
@@ -89,6 +68,11 @@ def serve(params):
             "port or stop the other service using this port."
         )
         sys.exit(1)
+
+    logging.getLogger("websockets.server").addFilter(_NotAProbe())
+    if viewer.debug:
+        # Every connection opening and closing, from the library's own logger.
+        logging.basicConfig(level=logging.INFO)
 
     # The logo is measurable from the moment the viewer opens, before any model
     # has been shown - which is what loading it into the backend buys.
@@ -98,4 +82,21 @@ def serve(params):
     atexit.register(del_port, viewer.port)
 
     print(f"Info: OCP Viewer runs at http://{viewer.host}:{viewer.port}")
-    app.run(port=viewer.port, host=viewer.host, debug=viewer.debug, use_reloader=False)
+    server = websocket_server(
+        lambda ws: handle(viewer, ws),
+        viewer.host,
+        viewer.port,
+        process_request=lambda _connection, request: respond(viewer, request),
+        # A model is JSON with base64 textures inside, which deflate shrinks by
+        # a quarter at the cost of seconds of CPU on every show. The browser is
+        # on the same machine, or a fast link; the seconds are what the user
+        # notices.
+        compression=None,
+        # The default is 1 MiB, and a model is a good deal more than that.
+        max_size=None,
+    )
+    with server:
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            pass

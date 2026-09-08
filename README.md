@@ -33,26 +33,26 @@ Everything else — settings, addressing several viewers, editors, Docker, the w
 
 ## What is here, and what is not
 
-Almost nothing about *viewing* is here. The show pipeline, the config semantics, the render and camera policy, the tree state, the measurement backend, the splash logo, the port registry and the wire protocol are all [`ocp-viewer-core`](../ocp-viewer-core), shared with the VS Code extension, Jupyter CadQuery and build123d Studio. What is left is a Flask app: a page, a websocket, and the settings that reach them.
+Almost nothing about *viewing* is here. The show pipeline, the config semantics, the render and camera policy, the tree state, the measurement backend, the splash logo, the port registry and the wire protocol are all [`ocp-viewer-core`](../ocp-viewer-core), shared with the VS Code extension, Jupyter CadQuery and build123d Studio. What is left is a websocket server that also hands out one page, and the settings that reach them.
 
 That is the point of the split rather than a side effect of it. A camera that behaves differently here than in VS Code is a bug in one of them, and there is now one place to fix it.
 
 | file | what |
 | --- | --- |
-| `__init__.py` | `create_app` — the factory, and `serve` for the command line |
+| `server/__init__.py` | `serve` — the websocket server, for the command line |
 | `__main__.py` | the CLI; every option is a viewer setting |
-| `config.py` | defaults, the config file, and the command line on top of both |
-| `viewer.py` | what a running viewer knows: its two clients, its config, its state |
-| `views.py` | the page, and a redirect to it |
-| `sockets.py` | the one websocket, and the six kinds of message on it |
-| `comms.py` | this host's transport: the browser, already connected |
-| `network.py` | is something already listening on that port |
+| `server/settings.py` | defaults, the config file, and the command line on top of both |
+| `server/viewer.py` | what a running viewer knows: its two clients, its config, its state |
+| `server/pages.py` | the page, the files it loads, and a redirect to it |
+| `server/sockets.py` | the one websocket, and the six kinds of message on it |
+| `comms.py` | this host's transport: the core's websocket client, pointed at a viewer |
+| `server/network.py` | is something already listening on that port |
 
 ## Settings
 
 Three sources, later winning over earlier:
 
-1. the defaults in `config.py`
+1. the defaults in `server/settings.py`
 2. `~/.ocpvscode_standalone`, if it exists — write one with `python -m ocp_viewer --create_configfile`
 3. the command line — `python -m ocp_viewer --help`
 

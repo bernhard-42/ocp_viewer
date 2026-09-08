@@ -17,11 +17,10 @@ limitations under the License.
 
 -->
 
-<!-- The standalone viewer's page, rendered by Flask. Its placeholders are
-     Jinja's and are resolved where every other Jinja template's are - an HTML
-     comment is no shelter from that, so this sentence says "placeholders"
-     rather than showing a pair of empty braces, which Jinja reads as an
-     expression and refuses.
+<!-- The standalone viewer's page, filled in by the server (pages.py). The
+     placeholders are Python's string.Template: a dollar sign followed by a
+     name, and every one of them is substituted with a JSON literal. A literal
+     dollar sign anywhere in this file must be doubled.
 
      ocp_vscode's webview is a separate page in that project, and is static:
      what it cannot know arrives in a message rather than a template. -->
@@ -40,9 +39,9 @@ limitations under the License.
 
             // The page is ocp-viewer-core's, the same one ocp_vscode's webview
             // builds. What is left here is how this host starts: the settings
-            // are rendered into the template by Flask, and the channel to
+            // are filled into this page by the server, and the channel to
             // Python is a websocket back to the server that served this page.
-            const comms = new Comms("{{ ws_host }}", {{ ws_port }}, {{ max_retries }});
+            const comms = new Comms($ws_host, $ws_port, $max_retries);
 
             function send(command, message) {
                 // A Select-tool selection lands in the system clipboard - the
@@ -57,22 +56,19 @@ limitations under the License.
             }
 
             const settings = {
-                theme: "{{ theme }}",
-                treeWidth: JSON.parse("{{ treeWidth }}"), // make linter happy
-                glass: JSON.parse("{{ glass|tojson }}"), // make linter happy
-                tools: JSON.parse("{{ tools|tojson }}"), // make linter happy
-                up: "{{ up }}",
-                control: "{{ control }}",
+                theme: $theme,
+                treeWidth: $tree_width,
+                glass: $glass,
+                tools: $tools,
+                up: $up,
+                control: $control,
                 // The Display reads the keymap in its constructor, so it has to
                 // be here at splash: this host builds its Display once, when
                 // the page loads, and every later show recomputed the keymap
                 // and threw it away. `modifier_keys` in ~/.ocpvscode_standalone
                 // therefore never applied at all, compat shim for the missing
                 // alt key and all.
-                // Single quotes, deliberately: the dict renders full of double
-                // quotes, which terminated a double-quoted string at its first
-                // key. `tojson` escapes single quotes, so this form is safe.
-                keymap: JSON.parse('{{ modifier_keys|tojson }}')
+                keymap: $modifier_keys
             };
 
             const page = createPage({

@@ -1,7 +1,7 @@
 """Is something already listening?
 
-Its own module because it is the one piece here that is neither Flask nor the
-viewer: a dual-stack check that has to try both IPv4 and IPv6, because a server
+Its own module because it is the one piece here that is neither the server nor
+the viewer: a dual-stack check that has to try both IPv4 and IPv6, because a server
 bound to one can answer on the other and a single check reports a free port
 that is not.
 """

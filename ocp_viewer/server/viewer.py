@@ -2,8 +2,8 @@
 
 One object rather than module globals, so that two viewers in one process are
 two viewers - the defect the same restructuring closed on the Python client
-side. The Flask app holds it in `app.extensions`, which is where an extension's
-state belongs.
+side. `serve` builds one and binds it into the two handlers it hands the
+server.
 """
 
 #

@@ -18,16 +18,16 @@ classifiers = [
 
 # One dependency that is ours. Everything the viewer decides - the show
 # pipeline, the config semantics, the measurement backend, the port registry
-# and the protocol - is ocp-viewer-core's, so what is left here is a Flask app
-# and the transport it speaks.
+# and the protocol - is ocp-viewer-core's, so what is left here is a websocket
+# server that also hands out one page, and the command line in front of it.
+# `websockets` is both halves: the client the core speaks through, and the
+# threaded server here.
 dependencies = [
     "ocp-viewer-core>=1.0.1,<1.1.0",
-    "flask>=3.0,<4.0",
-    "flask_sock>=0.7,<1.0",
     "click>=8.1,<9.0",
     "orjson",
     "pyaml",
-    "websockets>=16.0,<17.0",
+    "websockets>=16.0",
 ]
 
 [project.urls]

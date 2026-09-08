@@ -28,6 +28,7 @@ the whole thing to learn nothing.
 
 import orjson
 from ocp_viewer_core.comms import MessageType
+from websockets.exceptions import ConnectionClosed
 
 from .screenshot import save_png_data_url
 
@@ -42,30 +43,43 @@ BACKEND = "B"
 
 
 def handle(viewer, ws):
-    """Serve one connection until it closes."""
-    while True:
-        raw = ws.receive()
-        if raw is None:
-            return
-        if isinstance(raw, bytes):
-            raw = raw.decode("utf-8")
+    """Serve one connection until it closes.
 
-        kind, payload = raw[0], raw[2:]
+    One thread per connection, which is how `websockets`' threaded server runs
+    handlers, and the browser's socket is written from several of them - every
+    Python message is relayed by the thread that received it. That is safe
+    because `websockets` holds a lock for the whole of `send`: the model that is
+    still going out and the config arriving behind it cannot interleave on the
+    wire. The server this replaced had no such lock, and a config sent while a
+    large model was being compressed reached the browser first, unreadable.
+    """
+    try:
+        for raw in ws:
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
 
-        if kind == COMMAND:
-            _command(viewer, ws, payload)
-        elif kind == DATA:
-            _model(viewer, ws, payload)
-        elif kind == CONFIG:
-            _config(viewer, ws, payload)
-        elif kind == UPDATE:
-            _update(viewer, ws, payload)
-        elif kind == LISTEN:
-            viewer.browser = ws
-            print("Info: Browser as viewer client registered")
-        elif kind == BACKEND:
-            viewer.backend.handle_event(orjson.loads(payload)["model"], MessageType.DATA)
-            ws.send(orjson.dumps({"ok": True}))
+            kind, payload = raw[0], raw[2:]
+
+            if kind == COMMAND:
+                _command(viewer, ws, payload)
+            elif kind == DATA:
+                _model(viewer, ws, payload)
+            elif kind == CONFIG:
+                _config(viewer, ws, payload)
+            elif kind == UPDATE:
+                _update(viewer, ws, payload)
+            elif kind == LISTEN:
+                viewer.browser = ws
+                print("Info: Browser as viewer client registered")
+            elif kind == BACKEND:
+                viewer.backend.handle_event(orjson.loads(payload)["model"], MessageType.DATA)
+                ws.send(orjson.dumps({"ok": True}))
+    finally:
+        # A browser that went away is forgotten, so the next model says so
+        # instead of failing on a dead socket. A reconnecting page registers
+        # itself again with L.
+        if viewer.browser is ws:
+            viewer.browser = None
 
 
 def _to_browser(viewer, payload):
@@ -73,7 +87,12 @@ def _to_browser(viewer, payload):
     if viewer.browser is None:
         viewer.no_browser()
         return False
-    viewer.browser.send(payload)
+    try:
+        viewer.browser.send(payload)
+    except ConnectionClosed:
+        viewer.browser = None
+        viewer.no_browser()
+        return False
     return True
 
 
