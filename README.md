@@ -10,6 +10,8 @@ pip install ocp_viewer
 
 into the environment that also holds your CAD library (build123d or cadquery).
 
+**From a checkout** — for local use with `uv add path/to/ocp-viewer`, `uv pip install path/to/ocp-viewer` or `pip install path/to/ocp-viewer` — run `make assets` in the checkout first. The page's JavaScript and stylesheet are copied in from npm and are not in git, so a package built from a checkout that never ran it ships without them; the server says so at start. `make dist` runs it for you.
+
 ## Run
 
 ```bash
@@ -67,7 +69,7 @@ make check        # ruff check + ty check, and no formatter
 make run
 ```
 
-`make assets` copies JavaScript out of `node_modules`: three-cad-viewer and ocp-viewer-core are npm packages, installed from the registry. After bumping either dependency, run `make assets` again so the tracked static copies follow.
+`make assets` copies JavaScript out of `node_modules`: three-cad-viewer and ocp-viewer-core are npm packages, installed from the registry. The copies under `static/` are gitignored. After bumping either dependency, run `make assets` again so they follow.
 
 ## Licence
 

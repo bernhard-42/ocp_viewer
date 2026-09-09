@@ -99,3 +99,21 @@ def test_a_placeholder_the_page_names_and_the_server_does_not_fill_is_an_error(m
     monkeypatch.setattr(pages, "TEMPLATE", broken)
     with pytest.raises(KeyError):
         pages.respond(Viewer({}), request("/viewer"))
+
+
+def test_the_copied_in_files_are_named_when_absent(monkeypatch, tmp_path):
+    assert pages.missing_assets() == []
+    monkeypatch.setattr(pages, "STATIC", tmp_path)
+    assert pages.missing_assets() == list(pages.COPIED_IN)
+
+
+def test_a_server_without_them_says_so_at_start(monkeypatch, tmp_path, capsys):
+    from ocp_viewer.server import create_server
+
+    monkeypatch.setattr(pages, "STATIC", tmp_path)
+    _viewer, server = create_server({"host": "127.0.0.1", "port": 0})
+    server.shutdown()
+    out = capsys.readouterr().out
+    assert "cannot load" in out
+    assert "js/three-cad-viewer.esm.js" in out
+    assert "make assets" in out

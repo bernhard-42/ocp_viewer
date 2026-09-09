@@ -37,6 +37,20 @@ ROOT = Path(__file__).parent
 TEMPLATE = ROOT / "templates" / "viewer.html"
 STATIC = (ROOT / "static").resolve()
 
+# The files the page cannot do without and the package does not own: copied in
+# from npm by `make assets`, gitignored, and therefore absent from a wheel
+# built straight from a checkout that never ran it.
+COPIED_IN = (
+    "js/three-cad-viewer.esm.js",
+    "css/three-cad-viewer.css",
+    "js/ocp-viewer-core/index.js",
+)
+
+
+def missing_assets():
+    """The copied-in files that are not there, so a server can say so at start."""
+    return [name for name in COPIED_IN if not (STATIC / name).is_file()]
+
 
 def respond(viewer, request):
     """Answer a plain HTTP request, or None to let the websocket handshake run.

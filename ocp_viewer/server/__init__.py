@@ -29,6 +29,8 @@ and everything else - the page, its files - through `pages.respond`.
 import atexit
 import logging
 import sys
+import threading
+import time
 
 from ocp_viewer_core.logo import logo
 from ocp_viewer_core.state import add_port, del_port
@@ -36,7 +38,7 @@ from websockets.exceptions import InvalidMessage
 from websockets.sync.server import serve as websocket_server
 
 from .network import is_port_in_use
-from .pages import respond
+from .pages import missing_assets, respond
 from .sockets import handle
 from .viewer import Viewer
 
@@ -66,6 +68,21 @@ def create_server(params):
     on a port of its own in a thread of its own.
     """
     viewer = Viewer(params)
+
+    # Say it now rather than serve a page that loads nothing: the renderer and
+    # the shared page logic are copied in by `make assets`, and a wheel built
+    # from a checkout that never ran it - `uv add path/to/ocp-viewer` builds
+    # one - ships without them.
+    missing = missing_assets()
+    if len(missing) > 0:
+        print(
+            "Warning: the viewer page cannot load, these files are missing from "
+            "the installed package:\n  "
+            + "\n  ".join(missing)
+            + "\nThey are copied in by `make assets` (or `make dist`) in the "
+            "ocp-viewer checkout before the package is built; a released wheel "
+            "carries them."
+        )
 
     logging.getLogger("websockets.server").addFilter(_NotAProbe())
 
@@ -110,8 +127,22 @@ def serve(params):
     atexit.register(del_port, viewer.port)
 
     print(f"Info: OCP Viewer runs at http://{viewer.host}:{viewer.port}")
-    with server:
-        try:
-            server.serve_forever()
-        except KeyboardInterrupt:
-            pass
+
+    # The server runs on a thread of its own and the main thread sleeps in a
+    # loop, for Ctrl-C's sake. `serve_forever` blocks in a `select()` with no
+    # timeout, and on Windows a Ctrl-C is delivered only between bytecodes -
+    # never into a blocking call - so a server run on the main thread could not
+    # be stopped there at all (measured: a bare select() never returned). On
+    # POSIX the signal does interrupt the select, but the handler thread of a
+    # connected page is not a daemon thread and kept the process alive after
+    # the server had stopped; closing the browser's socket is what ends it.
+    thread = threading.Thread(target=server.serve_forever, name="ocp-viewer-server", daemon=True)
+    thread.start()
+    try:
+        while thread.is_alive():
+            time.sleep(0.5)
+    except KeyboardInterrupt:
+        pass
+    server.shutdown()
+    if viewer.browser is not None:
+        viewer.browser.close()
