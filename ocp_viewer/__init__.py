@@ -27,7 +27,13 @@ which only this host has, is under `server/`.
 
 # ruff: noqa: F401
 
-from ocp_tessellate.cad_objects import ImageFace
+from ocp_viewer_core.tessellator import (
+    ImageFace,
+    disable_native_tessellator,
+    enable_native_tessellator,
+    init_native_tessellator,
+    is_native_tessellator_enabled,
+)
 from ocp_viewer_core.colors import (
     BaseColorMap,
     ColorMap,
@@ -67,6 +73,8 @@ __all__ = [
     "ColorMap",
     "combined_config",
     "comms",
+    "disable_native_tessellator",
+    "enable_native_tessellator",
     "find_and_set_port",
     "get_colormap",
     "get_default",
@@ -78,6 +86,8 @@ __all__ = [
     "hsv_mapper",
     "ignore_camera_warnings",
     "ImageFace",
+    "init_native_tessellator",
+    "is_native_tessellator_enabled",
     "ListedColorMap",
     "matplotlib_mapper",
     "none_filter",
@@ -116,3 +126,7 @@ __all__ = [
     "web_to_rgb",
     "workspace_config",
 ]
+
+
+if init_native_tessellator():
+    print("Found and enabled native tessellator.")

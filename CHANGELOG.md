@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.1 (2026-09-09)
+
+- `ImageFace` and the native-tessellator toggles come from `ocp_viewer_core.tessellator`, so nothing here reaches into ocp_tessellate any more. The toggles - `enable_native_tessellator`, `disable_native_tessellator`, `is_native_tessellator_enabled` - are new in this viewer; the other three had them and this one did not. Needs the ocp-viewer-core release that carries `tessellator`, and the floor moves to it when that is published.
+- The YAML dependency is declared as `PyYAML`, which is what `settings.py` imports. `pyaml` is a different package that happened to pull it in.
+
 ## v1.1.0 (2026-09-09)
 
 The first release. 1.0.0 was the version the package carried while it was built and was never published.
