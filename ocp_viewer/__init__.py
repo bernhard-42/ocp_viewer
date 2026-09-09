@@ -27,13 +27,6 @@ which only this host has, is under `server/`.
 
 # ruff: noqa: F401
 
-from ocp_viewer_core.tessellator import (
-    ImageFace,
-    disable_native_tessellator,
-    enable_native_tessellator,
-    init_native_tessellator,
-    is_native_tessellator_enabled,
-)
 from ocp_viewer_core.colors import (
     BaseColorMap,
     ColorMap,
@@ -55,6 +48,13 @@ from ocp_viewer_core.selectors import (
     select_vertex,
     select_vertices,
 )
+from ocp_viewer_core.tessellator import (
+    ImageFace,
+    disable_native_tessellator,
+    enable_native_tessellator,
+    init_native_tessellator,
+    is_native_tessellator_enabled,
+)
 
 from ._version import __version__
 from .comms import *
@@ -71,6 +71,18 @@ __all__ = [
     "Camera",
     "Collapse",
     "ColorMap",
+    "GoldenRatioColormap",
+    "ImageFace",
+    "ListedColorMap",
+    "Render",
+    "SeededColormap",
+    "SegmentedColorMap",
+    "StandaloneComms",
+    "StudioBackground",
+    "StudioEnvironment",
+    "StudioTextureMapping",
+    "StudioToneMapping",
+    "UiTab",
     "combined_config",
     "comms",
     "disable_native_tessellator",
@@ -81,25 +93,19 @@ __all__ = [
     "get_defaults",
     "get_last_paths",
     "get_port",
-    "GoldenRatioColormap",
     "hex_to_rgb",
     "hsv_mapper",
     "ignore_camera_warnings",
-    "ImageFace",
     "init_native_tessellator",
     "is_native_tessellator_enabled",
-    "ListedColorMap",
     "matplotlib_mapper",
     "none_filter",
     "push_object",
     "random_rgb_mapper",
     "remove_object",
-    "Render",
     "reset_defaults",
     "reset_show",
     "save_screenshot",
-    "SeededColormap",
-    "SegmentedColorMap",
     "select_edge",
     "select_edges",
     "select_face",
@@ -115,13 +121,7 @@ __all__ = [
     "show_clear",
     "show_object",
     "show_objects",
-    "StandaloneComms",
     "status",
-    "StudioBackground",
-    "StudioEnvironment",
-    "StudioTextureMapping",
-    "StudioToneMapping",
-    "UiTab",
     "unset_colormap",
     "web_to_rgb",
     "workspace_config",

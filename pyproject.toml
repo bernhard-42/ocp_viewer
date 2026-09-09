@@ -23,7 +23,7 @@ classifiers = [
 # `websockets` is both halves: the client the core speaks through, and the
 # threaded server here.
 dependencies = [
-    "ocp-viewer-core>=1.0.6,<1.1.0",
+    "ocp-viewer-core>=1.0.7,<1.1.0",
     "click>=8.1,<9.0",
     "orjson",
     "PyYAML",
