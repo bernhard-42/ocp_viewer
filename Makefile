@@ -1,4 +1,4 @@
-.PHONY: clean bump install check tests dist assets wheel run
+.PHONY: clean bump install check tests dist assets wheel run create-release
 
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard *.egg-info)
@@ -58,3 +58,20 @@ dist: clean assets
 
 run:
 	python -m ocp_viewer
+
+# Push, then a GitHub release for the version the tree carries, with the wheel
+# and the sdist PyPI got. Both must exist in dist/ - `make dist` builds them -
+# or nothing is pushed; `gh` creates the tag when there is none yet.
+create-release:
+	@for f in dist/ocp_viewer-$(CURRENT_VERSION)-py3-none-any.whl \
+	         dist/ocp_viewer-$(CURRENT_VERSION).tar.gz; do \
+	    test -f $$f || { echo "missing $$f - run make dist first"; exit 1; }; \
+	done
+	@git push
+	@git push --tags
+	@gh release create v$(CURRENT_VERSION) \
+	    "dist/ocp_viewer-$(CURRENT_VERSION)-py3-none-any.whl#ocp_viewer $(CURRENT_VERSION) - wheel (PyPI)" \
+	    "dist/ocp_viewer-$(CURRENT_VERSION).tar.gz#ocp_viewer $(CURRENT_VERSION) - source (PyPI)" \
+	    --title "ocp_viewer $(CURRENT_VERSION)" \
+	    --notes "ocp_viewer $(CURRENT_VERSION) on PyPI. See CHANGELOG.md." \
+	    --target main
