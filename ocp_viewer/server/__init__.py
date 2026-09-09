@@ -40,7 +40,7 @@ from .pages import respond
 from .sockets import handle
 from .viewer import Viewer
 
-__all__ = ["Viewer", "serve"]
+__all__ = ["Viewer", "create_server", "serve"]
 
 
 class _NotAProbe(logging.Filter):
@@ -58,30 +58,21 @@ class _NotAProbe(logging.Filter):
         return not (isinstance(exc, InvalidMessage) and isinstance(exc.__cause__, EOFError))
 
 
-def serve(params):
-    """Run the viewer until it is stopped."""
+def create_server(params):
+    """The viewer and the server that serves it, bound but not yet running.
+
+    Everything `serve` does that is not about this process - the port check,
+    the registry, the banner - stays there, so a test can run the real server
+    on a port of its own in a thread of its own.
+    """
     viewer = Viewer(params)
 
-    if is_port_in_use(viewer.port, viewer.host):
-        print(
-            f"Port {viewer.port} is already in use. Please choose a different "
-            "port or stop the other service using this port."
-        )
-        sys.exit(1)
-
     logging.getLogger("websockets.server").addFilter(_NotAProbe())
-    if viewer.debug:
-        # Every connection opening and closing, from the library's own logger.
-        logging.basicConfig(level=logging.INFO)
 
     # The logo is measurable from the moment the viewer opens, before any model
     # has been shown - which is what loading it into the backend buys.
     viewer.backend.load_model(logo)
 
-    add_port(viewer.port)
-    atexit.register(del_port, viewer.port)
-
-    print(f"Info: OCP Viewer runs at http://{viewer.host}:{viewer.port}")
     server = websocket_server(
         lambda ws: handle(viewer, ws),
         viewer.host,
@@ -95,6 +86,30 @@ def serve(params):
         # The default is 1 MiB, and a model is a good deal more than that.
         max_size=None,
     )
+    return viewer, server
+
+
+def serve(params):
+    """Run the viewer until it is stopped."""
+    host = params.get("host", "127.0.0.1")
+    port = params.get("port", 3939)
+    if is_port_in_use(port, host):
+        print(
+            f"Port {port} is already in use. Please choose a different "
+            "port or stop the other service using this port."
+        )
+        sys.exit(1)
+
+    if params.get("debug", False):
+        # Every connection opening and closing, from the library's own logger.
+        logging.basicConfig(level=logging.INFO)
+
+    viewer, server = create_server(params)
+
+    add_port(viewer.port)
+    atexit.register(del_port, viewer.port)
+
+    print(f"Info: OCP Viewer runs at http://{viewer.host}:{viewer.port}")
     with server:
         try:
             server.serve_forever()
