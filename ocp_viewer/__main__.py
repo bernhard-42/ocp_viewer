@@ -24,6 +24,7 @@ the callback exists.
 
 import click
 import yaml
+from click.core import ParameterSource
 
 from .server import serve
 from .server.settings import DEFAULTS, write_config_file
@@ -40,14 +41,20 @@ yaml.add_representer(list, represent_list)
 def track_param(ctx, param, value):
     """Record the options the user actually gave.
 
-    click cannot be asked "was this set", and a default handed on as though it
-    were a choice would override the config file with the built-in value. The
-    three that are always recorded are not settings: they say where to listen
-    and how loudly.
+    A default handed on as though it were a choice would override the config
+    file with the built-in value, so only what came from the command line (or
+    the environment) is kept. click answers "where did this value come from"
+    since 8.0; this used to compare the value against `param.default`, which
+    click 8.5 broke for flags - their default became a sentinel, every untyped
+    flag compared unequal, and `--axes0` off and `--timeit` off were recorded as
+    choices on every start. The three that are always recorded are not
+    settings: they say where to listen and how loudly.
     """
     if not hasattr(ctx, "params_set"):
         ctx.params_set = {}
-    if value != param.default or param.name in ["port", "host", "debug"]:
+    source = ctx.get_parameter_source(param.name)
+    typed = source in (ParameterSource.COMMANDLINE, ParameterSource.ENVIRONMENT)
+    if typed or param.name in ["port", "host", "debug"]:
         ctx.params_set[param.name] = value
     return value
 

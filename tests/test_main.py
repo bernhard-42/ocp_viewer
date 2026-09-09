@@ -54,3 +54,38 @@ def test_every_viewer_option_is_a_setting():
     assert options == set(DEFAULTS) - {"modifier_keys", "new_tree_behavior"}, (
         "an option without a default, or a default without an option"
     )
+
+
+def test_a_flag_is_a_choice_by_where_it_came_from_not_by_its_default():
+    # click 8.5 made a flag's default a sentinel. The old test, `value !=
+    # param.default`, then recorded every untyped flag as False: `axes0` lost
+    # its built-in True and `timeit` appeared in the config on every start.
+    # Driven directly, so the sentinel does not have to survive click's own
+    # type conversion on older versions.
+    from types import SimpleNamespace
+
+    from click.core import ParameterSource
+
+    class Unset:
+        pass
+
+    param = SimpleNamespace(name="axes0", default=Unset())
+
+    def ctx_with(source):
+        return SimpleNamespace(get_parameter_source=lambda name: source)
+
+    ctx = ctx_with(ParameterSource.DEFAULT)
+    assert cli.track_param(ctx, param, False) is False
+    assert ctx.params_set == {}
+
+    ctx = ctx_with(ParameterSource.COMMANDLINE)
+    cli.track_param(ctx, param, True)
+    assert ctx.params_set == {"axes0": True}
+
+    ctx = ctx_with(ParameterSource.ENVIRONMENT)
+    cli.track_param(ctx, param, True)
+    assert ctx.params_set == {"axes0": True}
+
+    ctx = ctx_with(ParameterSource.DEFAULT)
+    cli.track_param(ctx, SimpleNamespace(name="port", default=3939), 3939)
+    assert ctx.params_set == {"port": 3939}, "where to listen is always passed on"
