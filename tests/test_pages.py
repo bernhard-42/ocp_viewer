@@ -112,7 +112,10 @@ def test_a_server_without_them_says_so_at_start(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(pages, "STATIC", tmp_path)
     _viewer, server = create_server({"host": "127.0.0.1", "port": 0})
-    server.shutdown()
+    # The server is bound but never run, and since websockets 17 `shutdown()`
+    # waits for `serve_forever` to return - which it never entered. Closing the
+    # listening socket is all a server that never served needs.
+    server.socket.close()
     out = capsys.readouterr().out
     assert "cannot load" in out
     assert "js/three-cad-viewer.esm.js" in out
