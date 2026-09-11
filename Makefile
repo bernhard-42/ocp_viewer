@@ -1,4 +1,4 @@
-.PHONY: clean bump install check tests dist assets wheel run create-release
+.PHONY: clean bump install check tests dist assets wheel run release upload create-release
 
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard *.egg-info)
@@ -59,9 +59,20 @@ dist: clean assets
 run:
 	python -m ocp_viewer
 
+# Commit whatever the release left in the tree and tag it, as the other repos
+# do; `create-release` then pushes both.
+release:
+	git add .
+	git status
+	git diff-index --quiet HEAD || git commit -m "Latest release: $(CURRENT_VERSION)"
+	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
+
+upload:
+	@twine upload dist/ocp_viewer-$(CURRENT_VERSION)-py3-none-any.whl dist/ocp_viewer-$(CURRENT_VERSION).tar.gz
+
 # Push, then a GitHub release for the version the tree carries, with the wheel
 # and the sdist PyPI got. Both must exist in dist/ - `make dist` builds them -
-# or nothing is pushed; `gh` creates the tag when there is none yet.
+# or nothing is pushed. The tag is `release`'s; no `--target`, it names the commit.
 create-release:
 	@for f in dist/ocp_viewer-$(CURRENT_VERSION)-py3-none-any.whl \
 	         dist/ocp_viewer-$(CURRENT_VERSION).tar.gz; do \
@@ -73,5 +84,4 @@ create-release:
 	    "dist/ocp_viewer-$(CURRENT_VERSION)-py3-none-any.whl#ocp_viewer $(CURRENT_VERSION) - wheel (PyPI)" \
 	    "dist/ocp_viewer-$(CURRENT_VERSION).tar.gz#ocp_viewer $(CURRENT_VERSION) - source (PyPI)" \
 	    --title "ocp_viewer $(CURRENT_VERSION)" \
-	    --notes "ocp_viewer $(CURRENT_VERSION) on PyPI. See CHANGELOG.md." \
-	    --target main
+	    --notes "ocp_viewer $(CURRENT_VERSION) on PyPI. See CHANGELOG.md."
