@@ -25,7 +25,7 @@ classifiers = [
 dependencies = [
     # `[cli]`: this host runs from a plain shell, where choosing between
     # several viewers is questionary's prompt rather than `input()`.
-    "ocp-viewer-core[cli]>=1.0.8,<1.1.0",
+    "ocp-viewer-core[cli]>=1.0.9,<1.1.0",
     "click>=8.1,<9.0",
     "orjson",
     "PyYAML",
