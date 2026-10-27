@@ -35,7 +35,7 @@ Everything else — settings, addressing several viewers, editors, Docker, the w
 
 ## What is here, and what is not
 
-Almost nothing about *viewing* is here. The show pipeline, the config semantics, the render and camera policy, the tree state, the measurement backend, the splash logo, the port registry and the wire protocol are all [`ocp-viewer-core`](../ocp-viewer-core), shared with the VS Code extension, Jupyter CadQuery and build123d Studio. What is left is a websocket server that also hands out one page, and the settings that reach them.
+Almost nothing about *viewing* is here. The show pipeline, the config semantics, the render and camera policy, the tree state, the measurement backend, the splash logo, the port registry and the wire protocol are all [`ocp-viewer-core`](https://github.com/bernhard-42/ocp-viewer-core), shared with the VS Code extension, Jupyter CadQuery and build123d Studio. What is left is a websocket server that also hands out one page, and the settings that reach them.
 
 That is the point of the split rather than a side effect of it. A camera that behaves differently here than in VS Code is a bug in one of them, and there is now one place to fix it.
 
