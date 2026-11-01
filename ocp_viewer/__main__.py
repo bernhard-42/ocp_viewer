@@ -126,7 +126,7 @@ def track_param(ctx, param, value):
 @click.option(
     "--cursor_pivot/--no_cursor_pivot",
     default=None,
-    help=f"With --control orbit, rotate around and zoom towards the point under the cursor (default: {DEFAULTS['cursor_pivot']})",
+    help=f"Rotate around and zoom towards the point under the cursor; --no_cursor_pivot rotates and zooms around the target (default: {DEFAULTS['cursor_pivot']})",
     callback=track_param,
 )
 @click.option(
