@@ -124,6 +124,12 @@ def track_param(ctx, param, value):
     callback=track_param,
 )
 @click.option(
+    "--cursor_pivot/--no_cursor_pivot",
+    default=None,
+    help=f"Rotate around and zoom towards the point under the cursor; --no_cursor_pivot rotates and zooms around the target (default: {DEFAULTS['cursor_pivot']})",
+    callback=track_param,
+)
+@click.option(
     "--reset_camera",
     type=click.STRING,
     default=None,

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Features**
+    - Rotating and zooming follow the cursor, with trackball and orbit control: a drag that starts on the model rotates around the point under the cursor, and the wheel and trackpad pinch zoom towards the cursor (three-cad-viewer 5.2). New setting `cursor_pivot` (default `true`) in `~/.ocpvscode_standalone` and flags `--cursor_pivot` / `--no_cursor_pivot`; `false` (or `--no_cursor_pivot`) restores rotating and zooming around the target. A config file written by an earlier release has no such key and gets the default
+
 ## v1.2.0 (2026-10-13)
 
 - **Features**

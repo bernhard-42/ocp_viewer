@@ -97,6 +97,7 @@ def _page(viewer, request):
         "tools": json.dumps(viewer.config["tools"]),
         "up": json.dumps(viewer.config["up"]),
         "control": json.dumps(viewer.config["control"]),
+        "cursor_pivot": json.dumps(viewer.config["cursor_pivot"]),
         "modifier_keys": json.dumps(viewer.config["modifier_keys"]),
     }
     # `substitute`, not `safe_substitute`: a placeholder the page names and this

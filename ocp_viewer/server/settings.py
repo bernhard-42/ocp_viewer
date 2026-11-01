@@ -92,6 +92,9 @@ DEFAULTS = {
     "tree_width": 240,
     "theme": "browser",
     "control": "trackball",
+    # Rotate around and zoom towards the point under the cursor, for trackball
+    # and orbit control. False rotates and zooms around the target.
+    "cursor_pivot": True,
     "modifier_keys": dict(DEFAULT_MODIFIER_KEYS),
     "new_tree_behavior": True,
     "pan_speed": 1,

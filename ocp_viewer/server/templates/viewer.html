@@ -62,6 +62,7 @@ limitations under the License.
                 tools: $tools,
                 up: $up,
                 control: $control,
+                cursorPivot: $cursor_pivot,
                 // The Display reads the keymap in its constructor, so it has to
                 // be here at splash: this host builds its Display once, when
                 // the page loads, and every later show recomputed the keymap
@@ -89,7 +90,8 @@ limitations under the License.
                         tools: settings.tools,
                         glass: settings.glass,
                         up: settings.up,
-                        control: settings.control
+                        control: settings.control,
+                        cursorPivot: settings.cursorPivot
                     }
                 }
             });

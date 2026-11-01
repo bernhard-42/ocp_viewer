@@ -32,7 +32,7 @@ def test_root_redirects_to_the_page():
 
 
 def test_the_page_carries_the_settings_as_json_literals(config_file):
-    viewer = Viewer({"theme": "dark", "tree_width": 333, "no_glass": True, "no_tools": True, "up": "Y", "control": "orbit"})
+    viewer = Viewer({"theme": "dark", "tree_width": 333, "no_glass": True, "no_tools": True, "up": "Y", "control": "orbit", "cursor_pivot": True})
     page = rendered(viewer)
     assert 'theme: "dark"' in page
     assert "treeWidth: 333" in page
@@ -40,6 +40,7 @@ def test_the_page_carries_the_settings_as_json_literals(config_file):
     assert "tools: false" in page
     assert 'up: "Y"' in page
     assert 'control: "orbit"' in page
+    assert "cursorPivot: true" in page
     keymap = re.search(r"keymap: (\{.*\})", page).group(1)
     assert json.loads(keymap) == viewer.config["modifier_keys"]
     assert "$" not in page, "every placeholder was filled"
