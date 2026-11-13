@@ -48,9 +48,11 @@ limitations under the License.
                 // browser's, so it reaches the machine the user is clicking
                 // on, not the server's. On an insecure origin (plain http on
                 // a non-localhost host) navigator.clipboard does not exist
-                // and this is a silent no-op.
-                if (command === "status" && Array.isArray(message.selected) && message.selected.length > 0) {
-                    navigator.clipboard?.writeText(message.selected.join(",")).catch(() => {});
+                // and this is a silent no-op. The text is the core's
+                // (`selectionText`); an empty selection has none, so the
+                // clipboard is kept then.
+                if (command === "status" && typeof message.selectedText === "string") {
+                    navigator.clipboard?.writeText(message.selectedText).catch(() => {});
                 }
                 comms.sendStatus({ command: command, text: message });
             }

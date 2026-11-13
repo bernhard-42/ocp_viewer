@@ -97,6 +97,8 @@ DEFAULTS = {
     "pan_speed": 1,
     "rotate_speed": 1,
     "zoom_speed": 1,
+    "cursor_pivot": True,
+    "zoom_to_cursor": True,
     "axes": False,
     "axes0": True,
     "grid_xy": False,

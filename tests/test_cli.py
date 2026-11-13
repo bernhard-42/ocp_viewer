@@ -130,6 +130,8 @@ def test_passthrough_flags(standalone):
         "--rotate_speed", "2.0",
         "--zoom_speed", "0.25",
         "--pan_speed", "0.75",
+        "--no_cursor_pivot",
+        "--no_zoom_to_cursor",
         "--up", "Y",
     )
     cfg = _wait_for_config(STANDALONE_PORT, proc)
@@ -143,6 +145,8 @@ def test_passthrough_flags(standalone):
     assert cfg["rotate_speed"] == 2.0
     assert cfg["zoom_speed"] == 0.25
     assert cfg["pan_speed"] == 0.75
+    assert cfg["cursor_pivot"] is False
+    assert cfg["zoom_to_cursor"] is False
     assert cfg["up"] == "Y"
 
 

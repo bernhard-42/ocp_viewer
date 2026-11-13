@@ -159,6 +159,18 @@ def track_param(ctx, param, value):
     callback=track_param,
 )
 @click.option(
+    "--cursor_pivot/--no_cursor_pivot",
+    default=None,
+    help=f"Rotate around the point under the cursor, or around the centre of the visible objects when the drag starts on the background; --no_cursor_pivot rotates around the camera target (default: {DEFAULTS['cursor_pivot']})",
+    callback=track_param,
+)
+@click.option(
+    "--zoom_to_cursor/--no_zoom_to_cursor",
+    default=None,
+    help=f"Zoom towards the cursor with the wheel and trackpad pinch; --no_zoom_to_cursor zooms towards the centre of the view (default: {DEFAULTS['zoom_to_cursor']})",
+    callback=track_param,
+)
+@click.option(
     "--axes",
     is_flag=True,
     help="Show axes",

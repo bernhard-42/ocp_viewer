@@ -17,4 +17,4 @@
 #
 
 # DO NOT EDIT THIS DIRECTLY - `make bump` keeps it in step with pyproject.toml
-__version__ = "1.2.0"
+__version__ = "1.3.0"
