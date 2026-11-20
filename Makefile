@@ -43,6 +43,11 @@ assets:
 	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.esm.js ocp_viewer/server/static/js/
 	@cp node_modules/three-cad-viewer/dist/three-cad-viewer.css ocp_viewer/server/static/css/
 	@cp node_modules/ocp-viewer-core/src/*.js ocp_viewer/server/static/js/ocp-viewer-core/
+	@# The licenses travel with the code they cover: three-cad-viewer's own and that of
+	@# what it bundles (three.js, postprocessing, n8ao), and ocp-viewer-core's
+	@cp node_modules/three-cad-viewer/LICENSE ocp_viewer/server/static/js/three-cad-viewer.LICENSE
+	@cp node_modules/three-cad-viewer/THIRD_PARTY_LICENSES ocp_viewer/server/static/js/three-cad-viewer.THIRD_PARTY_LICENSES
+	@cp node_modules/ocp-viewer-core/LICENSE ocp_viewer/server/static/js/ocp-viewer-core/LICENSE
 	@echo "=> Assets copied into static/"
 
 reload-assets:

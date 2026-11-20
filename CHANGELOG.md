@@ -10,6 +10,7 @@
 
     - **Changes**
         - `ocp_viewer` depends on `ocp-viewer-core[cli]>=1.2.0,<1.3.0` (was `>=1.1.3,<1.2.0`): ocp-viewer-core 1.2.0 runs on ocp-tessellate 3.7, which brings the kernel plugins, and has the two cursor options
+        - The package carries the licenses of the JavaScript it bundles: ocp-viewer-core (Apache-2.0), three-cad-viewer (MIT) and, inside it, three.js (MIT), postprocessing (Zlib) and n8ao (CC0)
 
 - **Inherited changes**
     - **from ocp-tessellate 3.7.0** (was 3.6.3)

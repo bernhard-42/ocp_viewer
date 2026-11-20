@@ -50,6 +50,10 @@ ocp_viewer = [
     "server/static/js/ocp-viewer-core/*.js",
     "server/static/css/*.css",
     "server/static/icon/*",
+    # The licenses of the bundled JavaScript, copied by `make assets`
+    "server/static/js/three-cad-viewer.LICENSE",
+    "server/static/js/three-cad-viewer.THIRD_PARTY_LICENSES",
+    "server/static/js/ocp-viewer-core/LICENSE",
 ]
 
 # ruff and ty are the whole toolchain, as in ocp-viewer-core: `ruff check`

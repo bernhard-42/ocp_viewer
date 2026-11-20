@@ -9,5 +9,7 @@ dist/
 
 # Copied from node_modules by `make dist`, not sources of ours.
 ocp_viewer/server/static/js/three-cad-viewer.esm.js
+ocp_viewer/server/static/js/three-cad-viewer.LICENSE
+ocp_viewer/server/static/js/three-cad-viewer.THIRD_PARTY_LICENSES
 ocp_viewer/server/static/css/three-cad-viewer.css
 ocp_viewer/server/static/js/ocp-viewer-core/
